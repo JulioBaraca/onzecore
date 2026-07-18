@@ -53,7 +53,7 @@ export default async function DashboardPage() {
       <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         <KpiTile
           label={dict.dashboard.position}
-          value={userStandingsRow ? `${formatInteger(userStandingsRow.position)}o` : dict.common.noData}
+          value={userStandingsRow ? `${formatInteger(userStandingsRow.position)}º` : dict.common.noData}
           hint={userStandingsRow ? `${formatInteger(userStandingsRow.points)} ${dict.dashboard.points}` : undefined}
         />
         <KpiTile
