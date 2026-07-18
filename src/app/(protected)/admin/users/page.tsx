@@ -4,6 +4,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { UsersTable } from "@/app/(protected)/admin/users/UsersTable";
+import { InviteUserForm } from "@/app/(protected)/admin/users/InviteUserForm";
 
 export default async function AdminUsersPage() {
   const [profile, dict, users] = await Promise.all([requireProfile(), getDictionary(), getAdminUsers()]);
@@ -11,6 +12,9 @@ export default async function AdminUsersPage() {
   return (
     <>
       <PageHeader title={dict.admin.usersTitle} />
+      <div className="mb-6">
+        <InviteUserForm />
+      </div>
       {users.length === 0 ? (
         <EmptyState title={dict.common.noRecordsTitle} description={dict.common.noRecordsDescription} />
       ) : (

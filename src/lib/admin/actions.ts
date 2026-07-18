@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireRole } from "@/lib/auth/roles";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import type { ActionResult } from "@/lib/auth/actions";
@@ -76,6 +77,36 @@ export async function grantCareerAccessAction(_prev: ActionResult, formData: For
     access_level: accessLevel,
   });
   revalidatePath("/admin/access");
+  return { success: true };
+}
+
+export async function inviteUserAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  await requireRole("admin");
+  const dict = await getDictionary();
+  const email = String(formData.get("email") ?? "").trim();
+  const fullName = String(formData.get("fullName") ?? "").trim();
+
+  if (!email || !email.includes("@")) {
+    return { error: dict.admin.invalidEmail };
+  }
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: dict.admin.serviceRoleMissing };
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
+    data: fullName ? { full_name: fullName } : undefined,
+    redirectTo: `${appUrl}/auth/callback?next=/update-password`,
+  });
+  if (error) return { error: error.message };
+
+  const supabase = (await createClient()) as unknown as SupabaseClient;
+  await writeAuditLog(supabase, "invite_user", "profile", data.user.id, { email });
+  revalidatePath("/admin/users");
   return { success: true };
 }
 

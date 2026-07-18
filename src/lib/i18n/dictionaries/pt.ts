@@ -349,6 +349,15 @@ const pt = {
     firstSeen: "Primeiro sync",
     lastSeen: "Último sync",
     noGrantsYet: "Nenhum acesso concedido ainda.",
+    inviteTitle: "Convidar usuário",
+    inviteEmailLabel: "E-mail",
+    inviteFullNameLabel: "Nome (opcional)",
+    inviteSubmit: "Enviar convite",
+    inviteSubmitLoading: "Enviando...",
+    inviteSuccess: "Convite enviado com sucesso.",
+    invalidEmail: "Informe um e-mail válido.",
+    serviceRoleMissing:
+      "SUPABASE_SERVICE_ROLE_KEY não está configurada no servidor - peça para o desenvolvedor adicionar essa variável de ambiente.",
   },
 };
 

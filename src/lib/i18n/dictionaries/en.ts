@@ -350,6 +350,15 @@ const en: Dictionary = {
     firstSeen: "First sync",
     lastSeen: "Last sync",
     noGrantsYet: "No access granted yet.",
+    inviteTitle: "Invite user",
+    inviteEmailLabel: "Email",
+    inviteFullNameLabel: "Name (optional)",
+    inviteSubmit: "Send invite",
+    inviteSubmitLoading: "Sending...",
+    inviteSuccess: "Invite sent successfully.",
+    invalidEmail: "Enter a valid email.",
+    serviceRoleMissing:
+      "SUPABASE_SERVICE_ROLE_KEY is not configured on the server - ask the developer to add that environment variable.",
   },
 };
 
