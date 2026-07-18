@@ -193,3 +193,16 @@ export async function getUpcomingFixtures(careerId: string, userTeamId: string |
       isHome: isHomeSide(row.user_team_side),
     }));
 }
+
+/** The in-game calendar date as of the last sync - unrelated to the real-world date. */
+export async function getCurrentGameDate(careerId: string): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("vw_fc26_current_schedule")
+    .select("current_game_date")
+    .eq("career_id", careerId)
+    .limit(1)
+    .maybeSingle();
+
+  return (data as { current_game_date: string | null } | null)?.current_game_date ?? null;
+}

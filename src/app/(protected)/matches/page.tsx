@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { resolveCurrentCareer } from "@/lib/career/current-career";
-import { getMatches, getUpcomingFixtures, summarizeMatches } from "@/features/matches/queries";
+import { getCurrentGameDate, getMatches, getUpcomingFixtures, summarizeMatches } from "@/features/matches/queries";
 import { buildCalendarEntries } from "@/features/matches/calendar";
 import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -18,9 +18,10 @@ export default async function MatchesPage() {
     redirect("/select-career");
   }
   const career = resolution.career;
-  const [matches, upcomingFixtures] = await Promise.all([
+  const [matches, upcomingFixtures, currentGameDate] = await Promise.all([
     getMatches(career.career_id, career.current_team_id),
     getUpcomingFixtures(career.career_id, career.current_team_id),
+    getCurrentGameDate(career.career_id),
   ]);
   const summary = summarizeMatches(matches);
   const winRate = pointsPercentage(summary.wins * 3 + summary.draws, summary.played);
@@ -49,7 +50,12 @@ export default async function MatchesPage() {
           )}
 
           <div className="mb-6">
-            <MatchesCalendar entries={calendarEntries} locale={locale} dict={dict} />
+            <MatchesCalendar
+              entries={calendarEntries}
+              locale={locale}
+              dict={dict}
+              currentGameDate={currentGameDate}
+            />
           </div>
 
           {matches.length > 0 && (
