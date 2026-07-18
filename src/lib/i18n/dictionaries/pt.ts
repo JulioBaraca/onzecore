@@ -27,6 +27,7 @@ const pt = {
     all: "Todas",
     exportCsv: "Exportar CSV",
     defaultUserName: "Usuário",
+    toBeDefined: "A definir",
   },
   nav: {
     dashboard: "Painel",

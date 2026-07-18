@@ -29,6 +29,7 @@ const en: Dictionary = {
     all: "All",
     exportCsv: "Export CSV",
     defaultUserName: "User",
+    toBeDefined: "To be defined",
   },
   nav: {
     dashboard: "Dashboard",

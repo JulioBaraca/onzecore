@@ -21,7 +21,7 @@ export async function MatchCard({ match }: { match: UpcomingMatch }) {
       <div className="min-w-0">
         <p className="truncate text-sm font-medium text-slate-900">
           {isHome ? "vs " : "@ "}
-          {match.opponentTeamName ?? dict.common.noData}
+          {match.opponentTeamName?.trim() || dict.common.toBeDefined}
         </p>
         <p className="truncate text-xs text-slate-500">{match.competitionName ?? dict.common.competition}</p>
       </div>

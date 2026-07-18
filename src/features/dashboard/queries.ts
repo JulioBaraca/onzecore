@@ -73,13 +73,22 @@ export async function getDashboardData(
       .eq("career_id", careerId)
       .eq("save_id", saveId),
     getMatches(careerId, teamId),
-    supabase
-      .from("vw_fc26_current_schedule")
-      .select(
-        "fixture_id, match_date, days_until_match, competition_name, opponent_team_name, user_team_side, match_date_sort",
-      )
-      .eq("career_id", careerId)
-      .order("match_date_sort", { ascending: true }),
+    (() => {
+      // fc26_agenda_jogos carries the full league calendar, not just the
+      // user's fixtures - without this filter, "upcoming matches" surfaces
+      // other teams' games (e.g. a same-date fixture in another competition)
+      // whenever they sort ahead of the user's own next match.
+      let query = supabase
+        .from("vw_fc26_current_schedule")
+        .select(
+          "fixture_id, match_date, days_until_match, competition_name, opponent_team_name, user_team_side, match_date_sort",
+        )
+        .eq("career_id", careerId);
+      if (teamId) {
+        query = query.eq("user_team_id", teamId);
+      }
+      return query.order("match_date_sort", { ascending: true });
+    })(),
     supabase
       .from("vw_fc26_current_finance")
       .select("currency, club_balance, transfer_budget, wage_budget, current_weekly_wages, transfer_net_balance")
