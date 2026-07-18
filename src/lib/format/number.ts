@@ -57,11 +57,17 @@ export function formatSigned(value: unknown): string {
   return rounded > 0 ? `+${rounded}` : `${rounded}`;
 }
 
+/**
+ * `date` columns arrive as bare "YYYY-MM-DD" (no time/zone). `new Date()`
+ * parses that as UTC midnight, so formatting it back in any timezone behind
+ * UTC (e.g. Brazil) would print the previous day - force UTC so the
+ * calendar date is echoed back unchanged.
+ */
 export function formatDate(value: string | null | undefined): string {
   if (!value) return "-";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "-";
-  return d.toLocaleDateString("pt-BR");
+  return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
 export function formatDateTime(value: string | null | undefined): string {

@@ -1,6 +1,17 @@
 import { toNumber } from "@/lib/format/number";
 import type { MatchResult } from "@/components/dashboard/FormGuide";
 
+/** `user_team_side` vocabulary mixes English/Portuguese abbreviations and full words. */
+export function isHomeSide(userTeamSide: string | null | undefined): boolean {
+  const side = (userTeamSide ?? "").trim().toUpperCase();
+  return side.startsWith("H") || side === "MANDANTE" || side === "CASA";
+}
+
+function isAwaySide(userTeamSide: string | null | undefined): boolean {
+  const side = (userTeamSide ?? "").trim().toUpperCase();
+  return side.startsWith("A") || side === "VISITANTE" || side === "FORA";
+}
+
 /**
  * Derives V/E/D directly from scores + side rather than trusting the
  * `user_result`/`completed` text columns, whose vocabulary (Portuguese vs
@@ -15,12 +26,9 @@ export function computeMatchResult(
   const hs = toNumber(homeScore);
   const as = toNumber(awayScore);
   if (hs === null || as === null) return null;
+  if (!isHomeSide(userTeamSide) && !isAwaySide(userTeamSide)) return null;
 
-  const side = (userTeamSide ?? "").trim().toUpperCase();
-  const isHome = side.startsWith("H") || side === "MANDANTE" || side === "CASA";
-  const isAway = side.startsWith("A") || side === "VISITANTE" || side === "FORA";
-  if (!isHome && !isAway) return null;
-
+  const isHome = isHomeSide(userTeamSide);
   const userGoals = isHome ? hs : as;
   const opponentGoals = isHome ? as : hs;
 

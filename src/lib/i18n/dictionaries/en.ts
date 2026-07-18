@@ -29,7 +29,6 @@ const en: Dictionary = {
     all: "All",
     exportCsv: "Export CSV",
     defaultUserName: "User",
-    toBeDefined: "To be defined",
   },
   nav: {
     dashboard: "Dashboard",
@@ -282,6 +281,12 @@ const en: Dictionary = {
     goalsFor: "Goals for",
     goalsAgainst: "Goals against",
     goalDifference: "Goal difference",
+    calendar: "Calendar",
+    scheduled: "Scheduled",
+    previousMonth: "Previous month",
+    nextMonth: "Next month",
+    goToToday: "Today",
+    noMatchesThisMonth: "No matches this month.",
   },
   playerProfile: {
     back: "Back to squad",

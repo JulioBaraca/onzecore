@@ -27,7 +27,6 @@ const pt = {
     all: "Todas",
     exportCsv: "Exportar CSV",
     defaultUserName: "Usuário",
-    toBeDefined: "A definir",
   },
   nav: {
     dashboard: "Painel",
@@ -281,6 +280,12 @@ const pt = {
     goalsFor: "Gols marcados",
     goalsAgainst: "Gols sofridos",
     goalDifference: "Saldo",
+    calendar: "Calendário",
+    scheduled: "Agendado",
+    previousMonth: "Mês anterior",
+    nextMonth: "Próximo mês",
+    goToToday: "Hoje",
+    noMatchesThisMonth: "Sem jogos neste mês.",
   },
   playerProfile: {
     back: "Voltar ao elenco",

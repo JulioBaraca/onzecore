@@ -1,10 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { toNumber } from "@/lib/format/number";
-import { getMatches } from "@/features/matches/queries";
+import { getMatches, getUpcomingFixtures, type UpcomingFixture } from "@/features/matches/queries";
 import { formatTemplate } from "@/lib/i18n/format-template";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { MatchResult } from "@/components/dashboard/FormGuide";
-import type { UpcomingMatch } from "@/components/dashboard/MatchCard";
 import type { StandingsRow } from "@/components/dashboard/StandingsMiniTable";
 import type { AlertItem } from "@/components/dashboard/AlertPanel";
 
@@ -16,7 +15,7 @@ interface SquadHighlight {
 export interface DashboardData {
   standingsWindow: StandingsRow[];
   recentForm: MatchResult[];
-  upcomingMatches: UpcomingMatch[];
+  upcomingMatches: UpcomingFixture[];
   finance: {
     currency: string | null;
     clubBalance: unknown;
@@ -66,29 +65,14 @@ export async function getDashboardData(
 ): Promise<DashboardData> {
   const supabase = await createClient();
 
-  const [standingsRes, recentMatches, upcomingRes, financeRes, squadRes, injuriesRes] = await Promise.all([
+  const [standingsRes, recentMatches, upcomingFixtures, financeRes, squadRes, injuriesRes] = await Promise.all([
     supabase
       .from("fc26_classificacao")
       .select("position, team_id, team_name, played, points, goal_difference, competition_id, group_id")
       .eq("career_id", careerId)
       .eq("save_id", saveId),
     getMatches(careerId, teamId),
-    (() => {
-      // fc26_agenda_jogos carries the full league calendar, not just the
-      // user's fixtures - without this filter, "upcoming matches" surfaces
-      // other teams' games (e.g. a same-date fixture in another competition)
-      // whenever they sort ahead of the user's own next match.
-      let query = supabase
-        .from("vw_fc26_current_schedule")
-        .select(
-          "fixture_id, match_date, days_until_match, competition_name, opponent_team_name, user_team_side, match_date_sort",
-        )
-        .eq("career_id", careerId);
-      if (teamId) {
-        query = query.eq("user_team_id", teamId);
-      }
-      return query.order("match_date_sort", { ascending: true });
-    })(),
+    getUpcomingFixtures(careerId, teamId),
     supabase
       .from("vw_fc26_current_finance")
       .select("currency, club_balance, transfer_budget, wage_budget, current_weekly_wages, transfer_net_balance")
@@ -143,38 +127,7 @@ export async function getDashboardData(
     .filter((r): r is MatchResult => r !== null)
     .reverse();
 
-  type UpcomingRawRow = {
-    fixture_id: string | null;
-    match_date: string | null;
-    days_until_match: unknown;
-    competition_name: string | null;
-    opponent_team_name: string | null;
-    user_team_side: string | null;
-  };
-  // fc26_agenda_jogos assigns a fresh fixture_id to the same not-yet-played
-  // fixture on every sync (fixture_id only stabilizes once a match is
-  // actually completed, per fc26_jogos), and some of those re-synced copies
-  // carry a blank opponent_team_name - so the stable key is date+competition
-  // only, and when two rows share a key the one with more fields filled in
-  // (opponent name present) wins over a blanker earlier copy.
-  const upcomingRows = (upcomingRes.data ?? []) as unknown as UpcomingRawRow[];
-  const upcomingByFixture = new Map<string, UpcomingRawRow>();
-  for (const row of upcomingRows) {
-    const key = `${row.match_date}|${row.competition_name}`;
-    const existing = upcomingByFixture.get(key);
-    if (!existing || (!existing.opponent_team_name?.trim() && row.opponent_team_name?.trim())) {
-      upcomingByFixture.set(key, row);
-    }
-  }
-  const upcomingMatches: UpcomingMatch[] = Array.from(upcomingByFixture.values())
-    .slice(0, 5)
-    .map((row) => ({
-      matchDate: row.match_date,
-      daysUntilMatch: toNumber(row.days_until_match),
-      competitionName: row.competition_name,
-      opponentTeamName: row.opponent_team_name,
-      userTeamSide: row.user_team_side,
-    }));
+  const upcomingMatches = upcomingFixtures.slice(0, 5);
 
   const financeRow = financeRes.data as unknown as {
     currency: string | null;
