@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { positionSortIndex } from "@/lib/domain/position-order";
 
 export interface SquadPlayerRow {
   player_id: string | null;
@@ -31,5 +32,6 @@ export async function getSquad(careerId: string): Promise<SquadPlayerRow[]> {
   if (error) {
     throw new Error(`Failed to load squad: ${error.message}`);
   }
-  return (data ?? []) as unknown as SquadPlayerRow[];
+  const rows = (data ?? []) as unknown as SquadPlayerRow[];
+  return rows.sort((a, b) => positionSortIndex(a.position) - positionSortIndex(b.position));
 }

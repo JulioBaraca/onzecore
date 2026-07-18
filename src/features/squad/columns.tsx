@@ -3,14 +3,17 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatDate, formatInteger, toNumber } from "@/lib/format/number";
+import { positionSortIndex } from "@/lib/domain/position-order";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { SquadPlayerRow } from "@/features/squad/queries";
 
 // injury_status/loan_status vocabulary is free text from the ingestion
-// pipeline (not a fixed enum) - a non-empty value other than an explicit
-// "no injury"/"healthy" marker is treated as currently injured.
+// pipeline (not a fixed enum) - confirmed real value for a healthy player
+// is the English "FIT" (fc26_elenco.injury_status), alongside the
+// Portuguese synonyms - a non-empty value other than one of those "healthy"
+// markers is treated as currently injured.
 function isInjured(status: string | null) {
-  return typeof status === "string" && status.trim() !== "" && !/none|nenhum|saudavel|saudável/i.test(status);
+  return typeof status === "string" && status.trim() !== "" && !/none|nenhum|saudavel|saudável|\bfit\b/i.test(status);
 }
 
 function isOnLoan(status: string | null) {
@@ -26,7 +29,11 @@ export function buildSquadColumns(dict: Dictionary, currency: string | null): Co
         <span className="font-medium text-slate-900">{row.original.player_name ?? dict.common.noData}</span>
       ),
     },
-    { accessorKey: "position", header: dict.squad.position },
+    {
+      accessorKey: "position",
+      header: dict.squad.position,
+      sortingFn: (a, b) => positionSortIndex(a.original.position) - positionSortIndex(b.original.position),
+    },
     {
       accessorKey: "age",
       header: dict.squad.age,
