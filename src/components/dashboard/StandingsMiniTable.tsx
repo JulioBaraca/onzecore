@@ -33,13 +33,17 @@ export async function StandingsMiniTable({ rows }: { rows: StandingsRow[] }) {
         {rows.map((row, i) => (
           <tr
             key={i}
-            className={cn(
-              "border-t border-slate-100",
-              row.isUserTeam && "bg-[var(--club-primary-soft)] font-semibold text-[var(--club-primary)]",
-            )}
+            className={cn("border-t border-slate-100", row.isUserTeam && "bg-[var(--club-primary-soft)]")}
           >
             <td className="py-1.5 tabular-nums text-slate-600">{formatInteger(row.position)}</td>
-            <td className="truncate py-1.5 font-medium text-slate-800">{row.teamName ?? dict.common.noData}</td>
+            <td
+              className={cn(
+                "truncate py-1.5",
+                row.isUserTeam ? "font-semibold text-[var(--club-primary)]" : "font-medium text-slate-800",
+              )}
+            >
+              {row.teamName ?? dict.common.noData}
+            </td>
             <td className="py-1.5 text-right tabular-nums text-slate-700">{formatInteger(row.played)}</td>
             <td className="py-1.5 text-right tabular-nums text-slate-700">{formatInteger(row.goalDifference)}</td>
             <td className="py-1.5 text-right font-semibold tabular-nums text-slate-900">

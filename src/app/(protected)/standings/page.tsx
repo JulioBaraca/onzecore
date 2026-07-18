@@ -53,12 +53,18 @@ export default async function StandingsPage() {
                         key={ri}
                         className={cn(
                           "border-t border-slate-100",
-                          row.team_id === career.current_team_id &&
-                            "bg-[var(--club-primary-soft)] font-semibold text-[var(--club-primary)]",
+                          row.team_id === career.current_team_id && "bg-[var(--club-primary-soft)]",
                         )}
                       >
                         <td className="py-1.5 tabular-nums text-slate-600">{formatInteger(row.position)}</td>
-                        <td className="truncate py-1.5 font-medium text-slate-800">
+                        <td
+                          className={cn(
+                            "truncate py-1.5",
+                            row.team_id === career.current_team_id
+                              ? "font-semibold text-[var(--club-primary)]"
+                              : "font-medium text-slate-800",
+                          )}
+                        >
                           {row.team_name ?? dict.common.noData}
                         </td>
                         <td className="py-1.5 text-right tabular-nums text-slate-700">{formatInteger(row.played)}</td>
