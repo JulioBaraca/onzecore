@@ -17,7 +17,12 @@ function isInjured(status: string | null) {
 }
 
 function isOnLoan(status: string | null) {
-  return typeof status === "string" && /loan|emprestim/i.test(status);
+  return typeof status === "string" && /loan|emprestim|emprestad/i.test(status);
+}
+
+/** Confirmed exact value for a player out on loan (fc26_elenco.loan_status). */
+export function isLoanedOutExit(loanStatus: string | null) {
+  return loanStatus === "EMPRESTADO_SAIDA";
 }
 
 export function buildSquadColumns(dict: Dictionary, currency: string | null): ColumnDef<SquadPlayerRow>[] {
@@ -28,6 +33,11 @@ export function buildSquadColumns(dict: Dictionary, currency: string | null): Co
       cell: ({ row }) => (
         <span className="font-medium text-slate-900">{row.original.player_name ?? dict.common.noData}</span>
       ),
+    },
+    {
+      accessorKey: "shirt_number",
+      header: dict.squad.number,
+      cell: ({ row }) => formatInteger(row.original.shirt_number),
     },
     {
       accessorKey: "position",

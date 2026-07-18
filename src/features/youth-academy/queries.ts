@@ -12,6 +12,7 @@ export interface YouthPlayerRow {
   academy_status: string | null;
   promoted_to_first_team: boolean | null;
   exit_date: string | null;
+  is_user_youth_team: string | null;
   updated_at?: string;
 }
 
@@ -38,7 +39,7 @@ export async function getYouthPlayers(careerId: string): Promise<YouthPlayerRow[
   const { data, error } = await supabase
     .from("fc26_categoria_base")
     .select(
-      "save_id, player_id, player_name, position, age, overall, potential, academy_status, promoted_to_first_team, exit_date, updated_at",
+      "save_id, player_id, player_name, position, age, overall, potential, academy_status, promoted_to_first_team, exit_date, is_user_youth_team, updated_at",
     )
     .eq("career_id", careerId);
 
@@ -55,7 +56,10 @@ export async function getYouthPlayers(careerId: string): Promise<YouthPlayerRow[
       byPlayer.set(key, row);
     }
   }
-  return Array.from(byPlayer.values());
+  // is_user_youth_team distinguishes the user's own academy from other
+  // clubs' youth rosters that land in the same table - only "TRUE" (the
+  // field is text, not boolean, and can also be null) counts as ours.
+  return Array.from(byPlayer.values()).filter((row) => (row.is_user_youth_team ?? "").toUpperCase() === "TRUE");
 }
 
 export function summarizeYouth(players: YouthPlayerRow[]): YouthSummary {

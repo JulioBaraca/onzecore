@@ -137,6 +137,7 @@ const pt = {
   },
   squad: {
     player: "Jogador",
+    number: "Número",
     position: "Posição",
     age: "Idade",
     overall: "Overall",
@@ -153,6 +154,7 @@ const pt = {
     assists: "Assistências",
     rating: "Avaliação",
     searchPlaceholder: "Buscar jogador...",
+    hideLoanedOut: "Ocultar emprestados",
   },
   analytics: {
     depthTitle: "Profundidade do elenco por posição",

@@ -6,10 +6,9 @@ import { getDictionary, getLocale } from "@/lib/i18n/get-dictionary";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { KpiTile } from "@/components/charts/KpiTile";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { MatchesCalendar } from "@/components/matches/MatchesCalendar";
-import { formatDate, formatInteger } from "@/lib/format/number";
+import { MatchesTable } from "@/app/(protected)/matches/MatchesTable";
+import { formatInteger } from "@/lib/format/number";
 import { pointsPercentage } from "@/lib/kpi/formulas";
 
 export default async function MatchesPage() {
@@ -58,52 +57,7 @@ export default async function MatchesPage() {
             />
           </div>
 
-          {matches.length > 0 && (
-            <Card>
-              <CardContent className="overflow-x-auto pt-5">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-xs uppercase tracking-wide text-slate-400">
-                      <th className="pb-2 font-medium">{dict.matches.date}</th>
-                      <th className="pb-2 font-medium">{dict.matches.competition}</th>
-                      <th className="pb-2 font-medium">{dict.matches.home}</th>
-                      <th className="pb-2 font-medium">{dict.matches.away}</th>
-                      <th className="pb-2 text-center font-medium">{dict.matches.score}</th>
-                      <th className="pb-2 text-center font-medium">{dict.matches.result}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {matches.slice(0, 60).map((m, i) => (
-                      <tr key={i} className="border-t border-slate-100">
-                        <td className="py-1.5 whitespace-nowrap text-slate-700">{formatDate(m.match_date)}</td>
-                        <td className="py-1.5 text-slate-700">{m.competition_name ?? dict.common.noData}</td>
-                        <td className="py-1.5 font-medium text-slate-800">
-                          {m.home_team_name ?? dict.common.noData}
-                        </td>
-                        <td className="py-1.5 font-medium text-slate-800">
-                          {m.away_team_name ?? dict.common.noData}
-                        </td>
-                        <td className="py-1.5 text-center font-semibold tabular-nums text-slate-900">
-                          {formatInteger(m.home_score)} - {formatInteger(m.away_score)}
-                        </td>
-                        <td className="py-1.5 text-center">
-                          {m.result ? (
-                            <Badge
-                              variant={m.result === "V" ? "success" : m.result === "D" ? "danger" : "neutral"}
-                            >
-                              {m.result === "V" ? dict.dashboard.win : m.result === "D" ? dict.dashboard.loss : dict.dashboard.draw}
-                            </Badge>
-                          ) : (
-                            dict.common.noData
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </CardContent>
-            </Card>
-          )}
+          {matches.length > 0 && <MatchesTable matches={matches} />}
         </>
       )}
     </>

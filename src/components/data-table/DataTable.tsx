@@ -22,6 +22,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[];
   searchPlaceholder?: string;
   onRowClick?: (row: TData) => void;
+  rowClassName?: (row: TData) => string | undefined;
 }
 
 export function DataTable<TData, TValue>({
@@ -29,6 +30,7 @@ export function DataTable<TData, TValue>({
   data,
   searchPlaceholder,
   onRowClick,
+  rowClassName,
 }: DataTableProps<TData, TValue>) {
   const { dict } = useI18n();
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -106,6 +108,7 @@ export function DataTable<TData, TValue>({
                   className={cn(
                     "border-b border-slate-100 last:border-0",
                     onRowClick && "cursor-pointer hover:bg-slate-50",
+                    rowClassName?.(row.original),
                   )}
                 >
                   {row.getVisibleCells().map((cell) => (

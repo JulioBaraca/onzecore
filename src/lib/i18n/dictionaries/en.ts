@@ -138,6 +138,7 @@ const en: Dictionary = {
   },
   squad: {
     player: "Player",
+    number: "Number",
     position: "Position",
     age: "Age",
     overall: "Overall",
@@ -154,6 +155,7 @@ const en: Dictionary = {
     assists: "Assists",
     rating: "Rating",
     searchPlaceholder: "Search player...",
+    hideLoanedOut: "Hide loaned-out players",
   },
   analytics: {
     depthTitle: "Squad depth by position",

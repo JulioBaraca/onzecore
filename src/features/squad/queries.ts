@@ -4,6 +4,7 @@ import { positionSortIndex } from "@/lib/domain/position-order";
 export interface SquadPlayerRow {
   player_id: string | null;
   player_name: string | null;
+  shirt_number: unknown;
   position: string | null;
   age: unknown;
   overall: unknown;
@@ -25,7 +26,7 @@ export async function getSquad(careerId: string): Promise<SquadPlayerRow[]> {
   const { data, error } = await supabase
     .from("vw_fc26_current_squad")
     .select(
-      "player_id, player_name, position, age, overall, potential, value, wage, contract_end, loan_status, injury_status, season_appearances, season_goals, season_assists, season_avg_rating, promovido_base",
+      "player_id, player_name, shirt_number, position, age, overall, potential, value, wage, contract_end, loan_status, injury_status, season_appearances, season_goals, season_assists, season_avg_rating, promovido_base",
     )
     .eq("career_id", careerId);
 
