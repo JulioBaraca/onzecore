@@ -73,20 +73,27 @@ export async function getDashboardData(
       .eq("save_id", saveId),
     getMatches(careerId, teamId),
     getUpcomingFixtures(careerId, teamId),
+    // Queried directly against the base table (career_id + save_id) rather
+    // than through vw_fc26_current_* - the layout already resolved saveId,
+    // so there's no need to pay for the view's "resolve the current save"
+    // logic all over again on every one of these calls.
     supabase
-      .from("vw_fc26_current_finance")
+      .from("fc26_financeiro_atual")
       .select("currency, club_balance, transfer_budget, wage_budget, current_weekly_wages, transfer_net_balance")
       .eq("career_id", careerId)
+      .eq("save_id", saveId)
       .limit(1)
       .maybeSingle(),
     supabase
-      .from("vw_fc26_current_squad")
+      .from("fc26_elenco")
       .select("player_name, season_goals, season_assists, season_avg_rating, value, wage, contract_end")
-      .eq("career_id", careerId),
+      .eq("career_id", careerId)
+      .eq("save_id", saveId),
     supabase
-      .from("vw_fc26_current_injuries")
+      .from("fc26_lesoes")
       .select("injury_severity")
-      .eq("career_id", careerId),
+      .eq("career_id", careerId)
+      .eq("save_id", saveId),
   ]);
 
   // Standings window: 2 above / 2 below the user's team, within its own
