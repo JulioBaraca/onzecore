@@ -13,6 +13,8 @@
   --club-primary-border: color-mix(in srgb, var(--club-primary) 35%, white);
   --club-secondary: #00b3bd;
   --club-secondary-contrast: #ffffff;
+  --club-secondary-soft: color-mix(in srgb, var(--club-secondary) 12%, white);
+  --club-secondary-border: color-mix(in srgb, var(--club-secondary) 35%, white);
   --club-chart-1: var(--club-primary);
   --club-chart-2: var(--club-secondary);
 }

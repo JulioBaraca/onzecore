@@ -73,7 +73,7 @@ export default async function MatchesPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {matches.map((m, i) => (
+                    {matches.slice(0, 60).map((m, i) => (
                       <tr key={i} className="border-t border-slate-100">
                         <td className="py-1.5 whitespace-nowrap text-slate-700">{formatDate(m.match_date)}</td>
                         <td className="py-1.5 text-slate-700">{m.competition_name ?? dict.common.noData}</td>

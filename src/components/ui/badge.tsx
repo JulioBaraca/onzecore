@@ -12,6 +12,7 @@ const badgeVariants = cva(
         warning: "bg-amber-100 text-amber-800",
         danger: "bg-red-100 text-red-800",
         club: "bg-[var(--club-primary-soft)] text-[var(--club-primary)]",
+        "club-secondary": "bg-[var(--club-secondary-soft)] text-[var(--club-secondary)]",
       },
     },
     defaultVariants: { variant: "neutral" },

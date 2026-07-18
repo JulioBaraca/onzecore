@@ -87,7 +87,7 @@ export function buildSquadColumns(dict: Dictionary, currency: string | null): Co
       accessorFn: (row) => (row.promovido_base ? 1 : 0),
       cell: ({ row }) =>
         row.original.promovido_base ? (
-          <Badge variant="club">{dict.common.yes}</Badge>
+          <Badge variant="club-secondary">{dict.common.yes}</Badge>
         ) : (
           <span className="text-slate-400">{dict.common.no}</span>
         ),
