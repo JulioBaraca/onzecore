@@ -80,14 +80,18 @@ export async function grantCareerAccessAction(_prev: ActionResult, formData: For
   return { success: true };
 }
 
-export async function inviteUserAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+export async function createUserAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   await requireRole("admin");
   const dict = await getDictionary();
   const email = String(formData.get("email") ?? "").trim();
   const fullName = String(formData.get("fullName") ?? "").trim();
+  const password = String(formData.get("password") ?? "");
 
   if (!email || !email.includes("@")) {
     return { error: dict.admin.invalidEmail };
+  }
+  if (password.length < 6) {
+    return { error: dict.admin.invalidPassword };
   }
 
   let adminClient;
@@ -97,15 +101,16 @@ export async function inviteUserAction(_prev: ActionResult, formData: FormData):
     return { error: dict.admin.serviceRoleMissing };
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const { data, error } = await adminClient.auth.admin.inviteUserByEmail(email, {
-    data: fullName ? { full_name: fullName } : undefined,
-    redirectTo: `${appUrl}/auth/callback?next=/update-password`,
+  const { data, error } = await adminClient.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: fullName ? { full_name: fullName } : undefined,
   });
   if (error) return { error: error.message };
 
   const supabase = (await createClient()) as unknown as SupabaseClient;
-  await writeAuditLog(supabase, "invite_user", "profile", data.user.id, { email });
+  await writeAuditLog(supabase, "create_user", "profile", data.user.id, { email });
   revalidatePath("/admin/users");
   return { success: true };
 }
