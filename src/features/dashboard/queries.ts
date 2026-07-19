@@ -1,11 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { toNumber } from "@/lib/format/number";
-import { getMatches, getUpcomingFixtures, type UpcomingFixture } from "@/features/matches/queries";
-import { formatTemplate } from "@/lib/i18n/format-template";
-import type { Dictionary } from "@/lib/i18n/get-dictionary";
+import { getMatches, getUpcomingFixtures, type MatchRow, type UpcomingFixture } from "@/features/matches/queries";
 import type { MatchResult } from "@/components/dashboard/FormGuide";
 import type { StandingsRow } from "@/components/dashboard/StandingsMiniTable";
-import type { AlertItem } from "@/components/dashboard/AlertPanel";
 
 interface SquadHighlight {
   playerName: string;
@@ -15,6 +12,7 @@ interface SquadHighlight {
 export interface DashboardData {
   standingsWindow: StandingsRow[];
   recentForm: MatchResult[];
+  recentMatches: MatchRow[];
   upcomingMatches: UpcomingFixture[];
   finance: {
     currency: string | null;
@@ -38,7 +36,6 @@ export interface DashboardData {
     total: number;
     severe: number;
   };
-  alerts: AlertItem[];
 }
 
 function pickTop<T extends Record<string, unknown>>(
@@ -61,7 +58,6 @@ export async function getDashboardData(
   careerId: string,
   saveId: string,
   teamId: string | null,
-  dict: Dictionary,
 ): Promise<DashboardData> {
   const supabase = await createClient();
 
@@ -71,7 +67,7 @@ export async function getDashboardData(
       .select("position, team_id, team_name, played, points, goal_difference, competition_id, group_id")
       .eq("career_id", careerId)
       .eq("save_id", saveId),
-    getMatches(careerId, teamId),
+    getMatches(careerId),
     getUpcomingFixtures(careerId, teamId),
     // Queried directly against the base table (career_id + save_id) rather
     // than through vw_fc26_current_* - the layout already resolved saveId,
@@ -97,7 +93,10 @@ export async function getDashboardData(
   ]);
 
   // Standings window: 2 above / 2 below the user's team, within its own
-  // competition + group (a career can span multiple competitions/groups).
+  // competition + group. A career's team can carry standings rows in
+  // several competitions at once (state league, national league, cups),
+  // most with played=0 until they actually start - the one with the most
+  // games played is the one actively being disputed right now.
   type StandingsRawRow = {
     position: unknown;
     team_id: string | null;
@@ -109,7 +108,11 @@ export async function getDashboardData(
     group_id: string | null;
   };
   const standingsRows = (standingsRes.data ?? []) as unknown as StandingsRawRow[];
-  const userRow = teamId ? standingsRows.find((r) => r.team_id === teamId) : undefined;
+  const userRows = teamId ? standingsRows.filter((r) => r.team_id === teamId) : [];
+  const userRow =
+    userRows.length > 0
+      ? userRows.reduce((best, r) => ((toNumber(r.played) ?? 0) > (toNumber(best.played) ?? 0) ? r : best))
+      : undefined;
   let standingsWindow: StandingsRow[] = [];
   if (userRow) {
     const sameGroup = standingsRows
@@ -173,33 +176,10 @@ export async function getDashboardData(
     /grave|severe|alta/i.test(r.injury_severity ?? ""),
   ).length;
 
-  const alerts: AlertItem[] = [];
-  if (contractsEndingSoon > 0) {
-    alerts.push({
-      tone: "warning",
-      message: formatTemplate(dict.dashboard.alertContractsEnding, { count: contractsEndingSoon }),
-    });
-  }
-  if (financeRow && toNumber(financeRow.current_weekly_wages) !== null && toNumber(financeRow.wage_budget) !== null) {
-    const cur = toNumber(financeRow.current_weekly_wages) ?? 0;
-    const budget = toNumber(financeRow.wage_budget) ?? 0;
-    if (budget > 0 && cur > budget) {
-      alerts.push({ tone: "critical", message: dict.dashboard.alertWageBudgetExceeded });
-    }
-  }
-  if (injuriesRows.length > 0) {
-    alerts.push({
-      tone: severe > 0 ? "critical" : "warning",
-      message:
-        severe > 0
-          ? formatTemplate(dict.dashboard.alertInjuriesWithSevere, { count: injuriesRows.length, severe })
-          : formatTemplate(dict.dashboard.alertInjuriesPlain, { count: injuriesRows.length }),
-    });
-  }
-
   return {
     standingsWindow,
     recentForm,
+    recentMatches: recentMatches.slice(0, 5),
     upcomingMatches,
     finance: financeRow
       ? {
@@ -225,6 +205,5 @@ export async function getDashboardData(
       total: injuriesRows.length,
       severe,
     },
-    alerts,
   };
 }

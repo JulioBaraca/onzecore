@@ -3,6 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { formatDate, formatInteger } from "@/lib/format/number";
+import { isHomeSide } from "@/lib/domain/match-result";
 import type { Dictionary } from "@/lib/i18n/get-dictionary";
 import type { MatchRow } from "@/features/matches/queries";
 
@@ -13,6 +14,11 @@ export function buildMatchColumns(dict: Dictionary): ColumnDef<MatchRow>[] {
       header: dict.matches.date,
       cell: ({ row }) => formatDate(row.original.match_date),
       sortingFn: (a, b) => (a.original.match_date_sort ?? "").localeCompare(b.original.match_date_sort ?? ""),
+    },
+    {
+      id: "venue",
+      header: dict.matches.venue,
+      cell: ({ row }) => (isHomeSide(row.original.user_team_side) ? dict.standings.home : dict.standings.away),
     },
     {
       accessorKey: "competition_name",

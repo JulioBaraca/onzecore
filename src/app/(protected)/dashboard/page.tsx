@@ -8,8 +8,8 @@ import { EmptyState } from "@/components/layout/EmptyState";
 import { KpiTile } from "@/components/charts/KpiTile";
 import { FormGuide } from "@/components/dashboard/FormGuide";
 import { MatchCard } from "@/components/dashboard/MatchCard";
+import { RecentMatchCard } from "@/components/dashboard/RecentMatchCard";
 import { StandingsMiniTable } from "@/components/dashboard/StandingsMiniTable";
-import { AlertPanel } from "@/components/dashboard/AlertPanel";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatInteger } from "@/lib/format/number";
 import { pointsPercentage, wageBudgetOccupancy } from "@/lib/kpi/formulas";
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const data = await getDashboardData(career.career_id, save.saveId, career.current_team_id, dict);
+  const data = await getDashboardData(career.career_id, save.saveId, career.current_team_id);
   const userStandingsRow = data.standingsWindow.find((r) => r.isUserTeam);
   const currency = data.finance?.currency ?? null;
 
@@ -169,10 +169,14 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>{dict.dashboard.alerts}</CardTitle>
+            <CardTitle>{dict.dashboard.playedMatches}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <AlertPanel alerts={data.alerts} />
+          <CardContent className="flex flex-col gap-2">
+            {data.recentMatches.length === 0 ? (
+              <p className="text-sm text-slate-400">{dict.dashboard.noPlayedMatches}</p>
+            ) : (
+              data.recentMatches.map((m, i) => <RecentMatchCard key={i} match={m} />)
+            )}
           </CardContent>
         </Card>
       </div>

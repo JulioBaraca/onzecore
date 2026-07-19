@@ -18,7 +18,7 @@ export default async function MatchesPage() {
   }
   const career = resolution.career;
   const [matches, upcomingFixtures, currentGameDate] = await Promise.all([
-    getMatches(career.career_id, career.current_team_id),
+    getMatches(career.career_id),
     getUpcomingFixtures(career.career_id, career.current_team_id),
     getCurrentGameDate(career.career_id),
   ]);

@@ -50,10 +50,15 @@ interface RawMatchRow {
  * "current" save - fc26_jogos rows can be split across saves that don't all
  * share the same save_id lineage (see migrations 021/022), and requiring an
  * exact save_id match hid real match history. Deduped by fixture_id
- * (fallback: home+away+date) keeping the most recently updated copy, then
- * optionally filtered to only fixtures involving the user's team.
+ * (fallback: home+away+date) keeping the most recently updated copy.
+ *
+ * fc26_jogos carries the *entire round's* results, not just the user's game
+ * (e.g. a Paulistão matchday syncs all 8 fixtures that day) - user_team_side
+ * is only populated on the row that's actually the user's own match, so that
+ * (not a team_id comparison, which every row in the round can equally
+ * satisfy for one side or the other) is the real signal for "is this mine".
  */
-export async function getMatches(careerId: string, userTeamId: string | null): Promise<MatchRow[]> {
+export async function getMatches(careerId: string): Promise<MatchRow[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("fc26_jogos")
@@ -78,10 +83,7 @@ export async function getMatches(careerId: string, userTeamId: string | null): P
     }
   }
 
-  let deduped = Array.from(byKey.values());
-  if (userTeamId) {
-    deduped = deduped.filter((m) => m.home_team_id === userTeamId || m.away_team_id === userTeamId);
-  }
+  const deduped = Array.from(byKey.values()).filter((m) => m.user_team_side?.trim());
   deduped.sort((a, b) => (b.match_date_sort ?? "").localeCompare(a.match_date_sort ?? ""));
 
   return deduped.map((row) => ({
