@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { toNumber } from "@/lib/format/number";
 import { computeMatchResult, isHomeSide } from "@/lib/domain/match-result";
+import { winRate as winRateFormula } from "@/lib/kpi/formulas";
 import type { MatchResult } from "@/components/dashboard/FormGuide";
 
 export interface MatchRow {
@@ -125,6 +126,151 @@ export function summarizeMatches(matches: MatchRow[]): MatchesSummary {
   }
 
   return { played: matches.length, wins, draws, losses, goalsFor, goalsAgainst };
+}
+
+export interface MatchInsights {
+  summary: {
+    played: number;
+    winRate: number | null;
+    avgGoalsFor: number | null;
+    avgGoalsAgainst: number | null;
+    cleanSheets: number;
+    biggestWin: { label: string; margin: number } | null;
+    currentStreak: { result: MatchResult; count: number } | null;
+  };
+  resultsBreakdown: { key: MatchResult; value: number }[];
+  goalsTimeline: { label: string; goalsFor: number; goalsAgainst: number }[];
+  pointsTrend: { label: string; points: number }[];
+  homeAway: { key: "home" | "away"; played: number; winRate: number | null }[];
+  competitionBreakdown: { label: string; played: number; winRate: number | null }[];
+}
+
+function truncateLabel(label: string, max = 12): string {
+  return label.length > max ? `${label.slice(0, max - 1)}…` : label;
+}
+
+/**
+ * Derives season-level insights from the same MatchRow[] getMatches already
+ * produces (chronological reversal happens here, not in getMatches, since
+ * every other consumer wants most-recent-first).
+ */
+export function computeMatchInsights(matches: MatchRow[]): MatchInsights {
+  const played = matches.length;
+  const decided = matches.filter((m) => m.result !== null);
+  const chronological = [...decided].reverse();
+
+  let wins = 0;
+  let draws = 0;
+  let losses = 0;
+  let goalsFor = 0;
+  let goalsAgainst = 0;
+  let cleanSheets = 0;
+
+  for (const m of decided) {
+    const isHome = isHomeSide(m.user_team_side);
+    const hs = toNumber(m.home_score) ?? 0;
+    const as = toNumber(m.away_score) ?? 0;
+    const gf = isHome ? hs : as;
+    const ga = isHome ? as : hs;
+    goalsFor += gf;
+    goalsAgainst += ga;
+    if (ga === 0) cleanSheets += 1;
+    if (m.result === "V") wins += 1;
+    else if (m.result === "E") draws += 1;
+    else if (m.result === "D") losses += 1;
+  }
+
+  let biggestWin: { label: string; margin: number } | null = null;
+  for (const m of decided) {
+    if (m.result !== "V") continue;
+    const isHome = isHomeSide(m.user_team_side);
+    const hs = toNumber(m.home_score) ?? 0;
+    const as = toNumber(m.away_score) ?? 0;
+    const gf = isHome ? hs : as;
+    const ga = isHome ? as : hs;
+    const margin = gf - ga;
+    if (!biggestWin || margin > biggestWin.margin) {
+      const opponent = isHome ? m.away_team_name : m.home_team_name;
+      biggestWin = { label: `${gf}-${ga} · ${opponent ?? "-"}`, margin };
+    }
+  }
+
+  let currentStreak: { result: MatchResult; count: number } | null = null;
+  for (const m of decided) {
+    if (!currentStreak) {
+      currentStreak = { result: m.result!, count: 1 };
+    } else if (m.result === currentStreak.result) {
+      currentStreak.count += 1;
+    } else {
+      break;
+    }
+  }
+
+  const goalsTimeline = chronological.slice(-10).map((m) => {
+    const isHome = isHomeSide(m.user_team_side);
+    const hs = toNumber(m.home_score) ?? 0;
+    const as = toNumber(m.away_score) ?? 0;
+    const opponent = isHome ? m.away_team_name : m.home_team_name;
+    return {
+      label: truncateLabel(opponent ?? "-"),
+      goalsFor: isHome ? hs : as,
+      goalsAgainst: isHome ? as : hs,
+    };
+  });
+
+  let cumulativePoints = 0;
+  const pointsTrend = chronological.map((m, i) => {
+    cumulativePoints += m.result === "V" ? 3 : m.result === "E" ? 1 : 0;
+    return { label: `${i + 1}`, points: cumulativePoints };
+  });
+
+  const homeMatches = decided.filter((m) => isHomeSide(m.user_team_side));
+  const awayMatches = decided.filter((m) => !isHomeSide(m.user_team_side));
+  function sideStats(list: MatchRow[]) {
+    const w = list.filter((m) => m.result === "V").length;
+    const d = list.filter((m) => m.result === "E").length;
+    return { played: list.length, winRate: winRateFormula(w, d, list.length) };
+  }
+  const homeAway: MatchInsights["homeAway"] = [
+    { key: "home", ...sideStats(homeMatches) },
+    { key: "away", ...sideStats(awayMatches) },
+  ];
+
+  const byCompetition = new Map<string, MatchRow[]>();
+  for (const m of decided) {
+    const comp = m.competition_name?.trim() || "-";
+    if (!byCompetition.has(comp)) byCompetition.set(comp, []);
+    byCompetition.get(comp)!.push(m);
+  }
+  const competitionBreakdown = Array.from(byCompetition.entries())
+    .map(([label, list]) => {
+      const w = list.filter((m) => m.result === "V").length;
+      const d = list.filter((m) => m.result === "E").length;
+      return { label, played: list.length, winRate: winRateFormula(w, d, list.length) };
+    })
+    .sort((a, b) => b.played - a.played)
+    .slice(0, 6);
+
+  return {
+    summary: {
+      played,
+      winRate: winRateFormula(wins, draws, decided.length),
+      avgGoalsFor: decided.length > 0 ? goalsFor / decided.length : null,
+      avgGoalsAgainst: decided.length > 0 ? goalsAgainst / decided.length : null,
+      cleanSheets,
+      biggestWin,
+      currentStreak,
+    },
+    resultsBreakdown: [
+      { key: "V", value: wins },
+      { key: "E", value: draws },
+      { key: "D", value: losses },
+    ],
+    goalsTimeline,
+    pointsTrend,
+    homeAway,
+    competitionBreakdown,
+  };
 }
 
 export interface UpcomingFixture {

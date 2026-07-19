@@ -19,6 +19,10 @@ export interface PlayerBio {
   evolucao_overall_carreira: unknown;
   overall_inicial_temporada: unknown;
   evolucao_overall_temporada: unknown;
+  season_appearances: unknown;
+  season_goals: unknown;
+  season_assists: unknown;
+  season_avg_rating: unknown;
 }
 
 export interface PlayerSeasonSummaryRow {
@@ -37,7 +41,7 @@ export async function getPlayerBio(careerId: string, playerId: string): Promise<
   const { data } = await supabase
     .from("vw_fc26_current_squad")
     .select(
-      "player_id, player_name, position, age, overall, potential, value, wage, contract_end, birthdate, shirt_number, injury_status, injury_days_remaining, injury_severity, overall_inicial_carreira, evolucao_overall_carreira, overall_inicial_temporada, evolucao_overall_temporada",
+      "player_id, player_name, position, age, overall, potential, value, wage, contract_end, birthdate, shirt_number, injury_status, injury_days_remaining, injury_severity, overall_inicial_carreira, evolucao_overall_carreira, overall_inicial_temporada, evolucao_overall_temporada, season_appearances, season_goals, season_assists, season_avg_rating",
     )
     .eq("career_id", careerId)
     .eq("player_id", playerId)

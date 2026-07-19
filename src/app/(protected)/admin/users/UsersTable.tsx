@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateUserRoleAction, updateUserActiveAction } from "@/lib/admin/actions";
+import { updateUserRoleAction, updateUserActiveAction, deleteUserAction } from "@/lib/admin/actions";
 import { useI18n } from "@/providers/i18n-provider";
 import { formatDateTime } from "@/lib/format/number";
+import { Button } from "@/components/ui/button";
 import type { AdminUserRow } from "@/features/admin/queries";
 import type { Role } from "@/types/auth";
 
@@ -13,6 +14,8 @@ export function UsersTable({ users, currentUserId }: { users: AdminUserRow[]; cu
   const { dict } = useI18n();
   const [rows, setRows] = useState(users);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   const roleLabel: Record<Role, string> = {
@@ -48,6 +51,21 @@ export function UsersTable({ users, currentUserId }: { users: AdminUserRow[]; cu
     });
   }
 
+  function handleDelete(userId: string) {
+    setConfirmingId(null);
+    setDeletingId(userId);
+    setErrors((e) => ({ ...e, [userId]: "" }));
+    startTransition(async () => {
+      const result = await deleteUserAction(userId);
+      setDeletingId(null);
+      if (result.error) {
+        setErrors((e) => ({ ...e, [userId]: result.error! }));
+      } else {
+        setRows((rs) => rs.filter((r) => r.id !== userId));
+      }
+    });
+  }
+
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
       <table className="w-full text-sm">
@@ -58,6 +76,7 @@ export function UsersTable({ users, currentUserId }: { users: AdminUserRow[]; cu
             <th className="px-3 py-2">{dict.admin.role}</th>
             <th className="px-3 py-2">{dict.admin.active}</th>
             <th className="px-3 py-2">{dict.admin.createdAt}</th>
+            <th className="px-3 py-2" />
           </tr>
         </thead>
         <tbody>
@@ -94,6 +113,29 @@ export function UsersTable({ users, currentUserId }: { users: AdminUserRow[]; cu
                   />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-slate-700">{formatDateTime(user.created_at)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-right">
+                  {isSelf ? null : confirmingId === user.id ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-xs text-slate-600">{dict.admin.confirmDeleteUser}</span>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        disabled={deletingId === user.id}
+                        onClick={() => handleDelete(user.id)}
+                      >
+                        {deletingId === user.id ? dict.admin.deleting : dict.admin.confirm}
+                      </Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setConfirmingId(null)}>
+                        {dict.common.cancel}
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button type="button" variant="destructive" size="sm" onClick={() => setConfirmingId(user.id)}>
+                      {dict.admin.deleteUser}
+                    </Button>
+                  )}
+                </td>
               </tr>
             );
           })}

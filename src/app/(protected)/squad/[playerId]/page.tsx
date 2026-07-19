@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { formatCurrency, formatDate, formatInteger, formatSigned } from "@/lib/format/number";
+import { formatCurrency, formatDate, formatInteger, formatSigned, toNumber } from "@/lib/format/number";
 
 export default async function PlayerProfilePage({
   params,
@@ -93,6 +93,32 @@ export default async function PlayerProfilePage({
             <div>
               <p className="text-xs text-slate-400">{dict.playerProfile.shirtNumber}</p>
               <p className="font-medium text-slate-900">{bio.shirt_number ?? dict.common.noData}</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>{dict.playerProfile.seasonNumbers}</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="text-xs text-slate-400">{dict.squad.appearances}</p>
+              <p className="font-medium text-slate-900">{formatInteger(bio.season_appearances)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{dict.squad.goals}</p>
+              <p className="font-medium text-slate-900">{formatInteger(bio.season_goals)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{dict.squad.assists}</p>
+              <p className="font-medium text-slate-900">{formatInteger(bio.season_assists)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">{dict.squad.rating}</p>
+              <p className="font-medium text-slate-900">
+                {toNumber(bio.season_avg_rating) !== null ? toNumber(bio.season_avg_rating)!.toFixed(2) : dict.common.noData}
+              </p>
             </div>
           </CardContent>
         </Card>

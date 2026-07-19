@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { toNumber } from "@/lib/format/number";
 import { goalParticipation, potentialGap } from "@/lib/kpi/formulas";
+import { positionSortIndex } from "@/lib/domain/position-order";
 
 export interface SquadAnalyticsPlayer {
   player_name: string | null;
@@ -202,7 +203,7 @@ export async function getAnalyticsData(careerId: string): Promise<AnalyticsData>
       risk: sorted.length <= 1 ? "high" : sorted.length === 2 ? "medium" : "low",
     });
   }
-  depth.sort((a, b) => b.groupSize - a.groupSize);
+  depth.sort((a, b) => positionSortIndex(a.position) - positionSortIndex(b.position));
 
   return { overview, ageBands, topPotentialGap, topGoalParticipation, bestWageEfficiency, depth };
 }

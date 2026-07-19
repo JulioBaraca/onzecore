@@ -1,14 +1,20 @@
 import { redirect } from "next/navigation";
 import { resolveCurrentCareer } from "@/lib/career/current-career";
 import { getAnalyticsData } from "@/features/analytics/queries";
+import { getMatches, computeMatchInsights } from "@/features/matches/queries";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EmptyState } from "@/components/layout/EmptyState";
 import { KpiTile } from "@/components/charts/KpiTile";
+import { LineChartCard } from "@/components/charts/LineChartCard";
+import { BarChartCard } from "@/components/charts/BarChartCard";
+import { CategoryBarChart } from "@/components/charts/CategoryBarChart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatCurrency, formatInteger } from "@/lib/format/number";
+
+const RESULT_COLOR = { V: "#10b981", E: "#94a3b8", D: "#ef4444" } as const;
 
 export default async function AnalyticsPage() {
   const [resolution, dict] = await Promise.all([resolveCurrentCareer(), getDictionary()]);
@@ -18,14 +24,39 @@ export default async function AnalyticsPage() {
   const career = resolution.career;
 
   const supabase = await createClient();
-  const [data, { data: financeRow }] = await Promise.all([
+  const [data, { data: financeRow }, matches] = await Promise.all([
     getAnalyticsData(career.career_id),
     supabase.from("vw_fc26_current_finance").select("currency").eq("career_id", career.career_id).maybeSingle(),
+    getMatches(career.career_id),
   ]);
   const currency = (financeRow as unknown as { currency: string | null } | null)?.currency ?? null;
+  const matchInsights = computeMatchInsights(matches);
 
   const riskLabel = { high: dict.analytics.riskHigh, medium: dict.analytics.riskMedium, low: dict.analytics.riskLow };
   const riskVariant = { high: "danger", medium: "warning", low: "success" } as const;
+
+  const resultWord = { V: dict.dashboard.win, E: dict.dashboard.draw, D: dict.dashboard.loss } as const;
+  const streakText = matchInsights.summary.currentStreak
+    ? `${matchInsights.summary.currentStreak.count}x ${resultWord[matchInsights.summary.currentStreak.result]}`
+    : dict.analytics.noStreak;
+
+  const resultsBreakdownData = matchInsights.resultsBreakdown.map((row) => ({
+    label: { V: dict.analytics.wins, E: dict.analytics.draws, D: dict.analytics.losses }[row.key],
+    value: row.value,
+    color: RESULT_COLOR[row.key],
+  }));
+
+  const homeAwayData = matchInsights.homeAway.map((row) => ({
+    label: row.key === "home" ? dict.analytics.homeLabel : dict.analytics.awayLabel,
+    value: row.winRate ?? 0,
+    color: row.key === "home" ? "var(--club-chart-1)" : "var(--club-chart-2)",
+  }));
+
+  const competitionBreakdownData = matchInsights.competitionBreakdown.map((row) => ({
+    label: row.label,
+    value: row.winRate ?? 0,
+    color: "var(--club-chart-1)",
+  }));
 
   if (data.overview.totalPlayers === 0) {
     return (
@@ -55,6 +86,91 @@ export default async function AnalyticsPage() {
           value={data.overview.avgAge !== null ? data.overview.avgAge.toFixed(1) : dict.common.noData}
         />
       </section>
+
+      <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-500">
+        {dict.analytics.onFieldTitle}
+      </h2>
+
+      <section className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <KpiTile
+          label={dict.matches.winRate}
+          value={
+            matchInsights.summary.winRate !== null ? `${matchInsights.summary.winRate.toFixed(0)}%` : dict.common.noData
+          }
+        />
+        <KpiTile
+          label={dict.analytics.avgGoalsFor}
+          value={
+            matchInsights.summary.avgGoalsFor !== null
+              ? matchInsights.summary.avgGoalsFor.toFixed(1)
+              : dict.common.noData
+          }
+        />
+        <KpiTile
+          label={dict.analytics.avgGoalsAgainst}
+          value={
+            matchInsights.summary.avgGoalsAgainst !== null
+              ? matchInsights.summary.avgGoalsAgainst.toFixed(1)
+              : dict.common.noData
+          }
+        />
+        <KpiTile label={dict.analytics.cleanSheets} value={formatInteger(matchInsights.summary.cleanSheets)} />
+        <KpiTile label={dict.analytics.currentStreak} value={streakText} />
+        <KpiTile
+          label={dict.analytics.biggestWin}
+          value={matchInsights.summary.biggestWin?.label ?? dict.analytics.noBiggestWin}
+        />
+      </section>
+
+      <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <LineChartCard
+          title={dict.analytics.pointsTrendTitle}
+          description={dict.analytics.pointsTrendDescription}
+          data={matchInsights.pointsTrend}
+          xKey="label"
+          series={[{ key: "points", name: dict.analytics.points, color: "var(--club-chart-1)" }]}
+          emptyLabel={dict.analytics.noInsightData}
+        />
+
+        <BarChartCard
+          title={dict.analytics.goalsTimelineTitle}
+          description={dict.analytics.goalsTimelineDescription}
+          data={matchInsights.goalsTimeline}
+          xKey="label"
+          series={[
+            { key: "goalsFor", name: dict.matches.goalsFor, color: RESULT_COLOR.V },
+            { key: "goalsAgainst", name: dict.matches.goalsAgainst, color: RESULT_COLOR.D },
+          ]}
+          emptyLabel={dict.analytics.noInsightData}
+        />
+
+        <CategoryBarChart
+          title={dict.analytics.resultsBreakdownTitle}
+          data={resultsBreakdownData}
+          emptyLabel={dict.analytics.noInsightData}
+        />
+
+        <CategoryBarChart
+          title={dict.analytics.homeAwayTitle}
+          description={dict.analytics.homeAwayDescription}
+          data={homeAwayData}
+          emptyLabel={dict.analytics.noInsightData}
+          valueSuffix="%"
+        />
+
+        {competitionBreakdownData.length > 1 && (
+          <div className="lg:col-span-2">
+            <CategoryBarChart
+              title={dict.analytics.competitionBreakdownTitle}
+              description={dict.analytics.competitionBreakdownDescription}
+              data={competitionBreakdownData}
+              emptyLabel={dict.analytics.noInsightData}
+              valueSuffix="%"
+              layout="vertical"
+            />
+          </div>
+        )}
+      </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card>

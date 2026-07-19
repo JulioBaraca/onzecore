@@ -115,6 +115,30 @@ export async function createUserAction(_prev: ActionResult, formData: FormData):
   return { success: true };
 }
 
+export async function deleteUserAction(userId: string): Promise<{ error?: string }> {
+  const actor = await requireRole("admin");
+  const dict = await getDictionary();
+  if (userId === actor.id) {
+    return { error: dict.admin.cannotSelfDelete };
+  }
+
+  let adminClient;
+  try {
+    adminClient = createAdminClient();
+  } catch {
+    return { error: dict.admin.serviceRoleMissing };
+  }
+
+  const { error } = await adminClient.auth.admin.deleteUser(userId);
+  if (error) return { error: error.message };
+
+  const supabase = (await createClient()) as unknown as SupabaseClient;
+  await writeAuditLog(supabase, "delete_user", "profile", userId);
+  revalidatePath("/admin/users");
+  revalidatePath("/admin/access");
+  return {};
+}
+
 export async function revokeCareerAccessAction(grantId: string): Promise<{ error?: string }> {
   await requireRole("admin");
   const supabase = (await createClient()) as unknown as SupabaseClient;
