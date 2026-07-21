@@ -56,7 +56,16 @@ export default async function StandingsPage() {
                           row.team_id === career.current_team_id && "bg-[var(--club-primary-soft)]",
                         )}
                       >
-                        <td className="py-1.5 tabular-nums text-slate-600">{formatInteger(row.position)}</td>
+                        <td
+                          className={cn(
+                            "py-1.5 tabular-nums",
+                            row.team_id === career.current_team_id
+                              ? "font-bold text-[var(--club-primary)]"
+                              : "text-slate-600",
+                          )}
+                        >
+                          {formatInteger(row.position)}
+                        </td>
                         <td
                           className={cn(
                             "truncate py-1.5",

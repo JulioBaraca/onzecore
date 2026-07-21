@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/lib/career/actions";
 import { Button } from "@/components/ui/button";
-import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher";
 import { MobileMenuButton } from "@/components/layout/MobileMenuButton";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { formatDateTime } from "@/lib/format/number";
@@ -27,7 +26,6 @@ export async function Topbar({
         </p>
       </div>
       <div className="flex items-center gap-2 sm:gap-4">
-        <LocaleSwitcher />
         <Link href="/select-career" className="text-sm text-slate-600 hover:underline">
           {dict.common.switchCareer}
         </Link>

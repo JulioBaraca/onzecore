@@ -9,6 +9,11 @@ import { resolveClubTheme, type ClubTheme } from "@/lib/theme/palette";
  * of issue fixed for save resolution in migrations 021/022) - the most
  * recently updated row for this career+team is the right answer regardless
  * of which save it happened to be captured under.
+ *
+ * career_theme_overrides is checked first: fc26_club_colors is sync-managed
+ * (overwritten on every ingestion run), so a user's manual color choice
+ * from Settings is never written there - it lives in the override table
+ * instead and takes precedence when present.
  */
 export async function getClubThemeForSave(
   careerId: string,
@@ -16,6 +21,17 @@ export async function getClubThemeForSave(
   teamId: string | null,
 ): Promise<ClubTheme> {
   const supabase = await createClient();
+
+  const { data: override } = await supabase
+    .from("career_theme_overrides")
+    .select("primary_color_hex, secondary_color_hex")
+    .eq("career_id", careerId)
+    .maybeSingle();
+
+  if (override) {
+    const row = override as unknown as { primary_color_hex: string; secondary_color_hex: string };
+    return resolveClubTheme(row.primary_color_hex, row.secondary_color_hex);
+  }
 
   if (teamId) {
     const { data } = await supabase

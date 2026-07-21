@@ -1,14 +1,22 @@
 import { requireProfile, getCurrentUser } from "@/lib/auth/session";
 import { createClient } from "@/lib/supabase/server";
 import { getDictionary } from "@/lib/i18n/get-dictionary";
+import { resolveCurrentCareer } from "@/lib/career/current-career";
+import { getClubThemeForSave } from "@/lib/theme/club-color";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LocaleSwitcher } from "@/components/layout/LocaleSwitcher";
 import { ProfileForm } from "@/app/(protected)/settings/ProfileForm";
 import { CompactModeToggle } from "@/app/(protected)/settings/CompactModeToggle";
+import { ClubColorForm } from "@/app/(protected)/settings/ClubColorForm";
 
 export default async function SettingsPage() {
-  const [profile, user, dict] = await Promise.all([requireProfile(), getCurrentUser(), getDictionary()]);
+  const [profile, user, dict, careerResolution] = await Promise.all([
+    requireProfile(),
+    getCurrentUser(),
+    getDictionary(),
+    resolveCurrentCareer(),
+  ]);
 
   const supabase = await createClient();
   const { data: prefs } = await supabase
@@ -17,6 +25,11 @@ export default async function SettingsPage() {
     .eq("user_id", profile.id)
     .maybeSingle();
   const compactMode = (prefs as unknown as { compact_mode: boolean } | null)?.compact_mode ?? false;
+
+  const career = careerResolution.status === "selected" ? careerResolution.career : null;
+  const theme = career
+    ? await getClubThemeForSave(career.career_id, career.current_save_id ?? "", career.current_team_id)
+    : null;
 
   return (
     <>
@@ -50,6 +63,21 @@ export default async function SettingsPage() {
               <LocaleSwitcher />
             </CardContent>
           </Card>
+
+          {theme && (
+            <Card>
+              <CardHeader>
+                <CardTitle>{dict.settings.colorsSection}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ClubColorForm
+                  key={`${theme.primary}-${theme.secondary}`}
+                  primaryColor={theme.primary}
+                  secondaryColor={theme.secondary}
+                />
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </>

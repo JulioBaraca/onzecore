@@ -35,7 +35,14 @@ export async function StandingsMiniTable({ rows }: { rows: StandingsRow[] }) {
             key={i}
             className={cn("border-t border-slate-100", row.isUserTeam && "bg-[var(--club-primary-soft)]")}
           >
-            <td className="py-1.5 tabular-nums text-slate-600">{formatInteger(row.position)}</td>
+            <td
+              className={cn(
+                "py-1.5 tabular-nums",
+                row.isUserTeam ? "font-bold text-[var(--club-primary)]" : "text-slate-600",
+              )}
+            >
+              {formatInteger(row.position)}
+            </td>
             <td
               className={cn(
                 "truncate py-1.5",

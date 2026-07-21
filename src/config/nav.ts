@@ -23,6 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/injuries", labelKey: "injuries", minRole: "viewer" },
   { href: "/finance", labelKey: "finance", minRole: "viewer" },
   { href: "/analytics", labelKey: "analytics", minRole: "viewer" },
+  { href: "/history", labelKey: "history", minRole: "viewer" },
   { href: "/sync-status", labelKey: "syncStatus", minRole: "manager" },
   { href: "/settings", labelKey: "settings", minRole: "viewer" },
 ];
