@@ -237,6 +237,10 @@ const pt = {
     noFileSelected: "Selecione um arquivo PDF.",
     invalidFileType: "O arquivo precisa ser um PDF.",
     fileTooLarge: "O arquivo excede o tamanho máximo de 25 MB.",
+    previousPage: "Página anterior",
+    nextPage: "Próxima página",
+    pageIndicator: "Página {current} de {total}",
+    viewerError: "Não foi possível exibir o PDF.",
   },
   syncStatus: {
     startedAt: "Início",

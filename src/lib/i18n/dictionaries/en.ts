@@ -238,6 +238,10 @@ const en: Dictionary = {
     noFileSelected: "Select a PDF file.",
     invalidFileType: "The file must be a PDF.",
     fileTooLarge: "The file exceeds the maximum size of 25 MB.",
+    previousPage: "Previous page",
+    nextPage: "Next page",
+    pageIndicator: "Page {current} of {total}",
+    viewerError: "Could not display the PDF.",
   },
   syncStatus: {
     startedAt: "Started",

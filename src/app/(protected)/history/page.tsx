@@ -5,6 +5,7 @@ import { getDictionary } from "@/lib/i18n/get-dictionary";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DocumentUploadForm } from "@/app/(protected)/history/DocumentUploadForm";
+import { PdfViewerClient } from "@/components/documents/PdfViewerClient";
 import { formatDateTime } from "@/lib/format/number";
 
 export default async function HistoryPage() {
@@ -40,11 +41,7 @@ export default async function HistoryPage() {
                   <p className="text-xs text-slate-500">
                     {dict.history.lastUpdated} {formatDateTime(section.doc.updatedAt)}
                   </p>
-                  <iframe
-                    src={section.doc.signedUrl}
-                    title={section.title}
-                    className="h-[70vh] w-full rounded-lg border border-slate-200"
-                  />
+                  <PdfViewerClient fileUrl={section.doc.signedUrl} />
                 </>
               ) : (
                 <p className="text-sm text-slate-400">{dict.history.noDocument}</p>
